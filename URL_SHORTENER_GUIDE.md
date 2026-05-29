@@ -4,7 +4,7 @@ Ikuti langkah-langkah di bawah ini secara berurutan. Setiap langkah memiliki per
 
 ---
 
-## Fase 1 — Database & Models
+## Fase 1 — Database & Models ✓
 
 ### Langkah 1.1 — Buat Model & Migration untuk `ShortUrl`
 
@@ -25,7 +25,7 @@ Schema::create('short_urls', function (Blueprint $table) {
     $table->id();
     $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
     $table->text('original_url');
-    $table->string('short_code', 16)->unique();
+    $table->string('short_code', 16)->nullable()->unique(); // nullable: diisi model event setelah insert
     $table->boolean('is_custom_code')->default(false);
     $table->unsignedBigInteger('clicks_count')->default(0);
     $table->boolean('is_active')->default(true);
@@ -41,6 +41,7 @@ Kemudian buka `app/Models/ShortUrl.php` dan lengkapi modelnya:
 
 namespace App\Models;
 
+use App\Support\ShortCodeGenerator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -67,6 +68,17 @@ class ShortUrl extends Model
         'expires_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (ShortUrl $shortUrl) {
+            if (is_null($shortUrl->short_code)) {
+                $shortUrl->updateQuietly([
+                    'short_code' => app(ShortCodeGenerator::class)->generate(),
+                ]);
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -88,13 +100,19 @@ class ShortUrl extends Model
         return $this->expires_at !== null && $this->expires_at->isPast();
     }
 
-    // Accessor: shortUrl lengkap dengan domain
     public function getShortUrlAttribute(): string
     {
         return url($this->short_code);
     }
 }
 ```
+
+**Kenapa pakai `booted()` + model event?**
+
+Karena `short_code` diisi setelah record tersimpan — bukan sebelumnya. Alurnya:
+1. Record diinsert → MySQL assigns ID
+2. Event `created` terpicu → generator ambil counter dari Redis, scramble, encode ke Base62
+3. `updateQuietly()` menyimpan kode tanpa memicu event lain
 
 ---
 
@@ -179,9 +197,72 @@ php artisan db:table short_url_visits
 
 ## Fase 2 — Backend Logic
 
-### Langkah 2.1 — Short Code Generator
+### Langkah 2.1 — Short Code Generator (Base62 + Redis + Salt)
 
-Buat helper class untuk generate kode acak:
+#### Konsep: Kenapa tidak pakai pendekatan lain?
+
+| Pendekatan | Masalah |
+|---|---|
+| Random string + retry | Butuh DB query tiap generate, bisa race condition di traffic tinggi |
+| Encode ID langsung | URL bisa ditebak (counter 1,2,3 → kode berurutan) |
+| **Redis counter + linear permutation** | Atomic, collision-free, dan output tidak berurutan ✓ |
+
+#### Cara Kerja
+
+```
+Redis INCR → counter (1, 2, 3, ...)
+    ↓
+f(counter) = (counter × MULTIPLIER + SALT) mod RANGE
+    ↓ di mana RANGE = 62^6 - 62^5 ≈ 55.8 miliar
++ 62^5 → value selalu dalam range 6-digit Base62
+    ↓
+Base62 encode → "xK9mZp"
+```
+
+Ini disebut **linear permutation** (Knuth's multiplicative hashing). Sifatnya:
+- **Bijektif** — selama MULTIPLIER coprime dengan RANGE, tidak ada collision
+- **Non-sequential** — counter 1,2,3 menghasilkan kode yang terlihat acak
+- **Deterministic** — counter yang sama + salt yang sama = kode yang sama
+
+> **MULTIPLIER = 2654435761** adalah konstanta golden ratio hashing yang sudah terbukti terdistribusi baik dan coprime dengan banyak nilai RANGE.
+
+#### Setup Environment
+
+Tambahkan ke `.env`:
+
+```dotenv
+SHORTCODE_SALT=284719365
+```
+
+Gunakan integer besar acak untuk SALT. Ini yang membuat kode tidak bisa ditebak walaupun orang tahu algoritmanya.
+
+#### Buat Config File
+
+Buat `config/shortcode.php`:
+
+```php
+<?php
+
+return [
+    'salt' => (int) env('SHORTCODE_SALT', 0),
+];
+```
+
+#### Daftarkan di AppServiceProvider
+
+Buka `app/Providers/AppServiceProvider.php`, tambahkan di method `register()`:
+
+```php
+use App\Support\ShortCodeGenerator;
+
+$this->app->singleton(ShortCodeGenerator::class, function () {
+    return new ShortCodeGenerator(config('shortcode.salt'));
+});
+```
+
+> **Kenapa `singleton`?** Karena kita ingin satu instance yang di-reuse, bukan membuat object baru setiap request. Salt dibaca sekali dari config.
+
+#### Buat Class Generator
 
 ```bash
 php artisan make:class Support/ShortCodeGenerator --no-interaction
@@ -194,21 +275,48 @@ Isi `app/Support/ShortCodeGenerator.php`:
 
 namespace App\Support;
 
-use App\Models\ShortUrl;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Redis;
 
 class ShortCodeGenerator
 {
-    public static function generate(int $length = 6): string
+    private const CHARSET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    private const BASE = 62;
+    private const MIN = 62 ** 5;                        // 916,132,832  — batas bawah 6-digit
+    private const RANGE = 62 ** 6 - self::MIN;          // 55,884,099,552 — total kombinasi 6-digit
+    private const MULTIPLIER = 2654435761;               // coprime dengan RANGE (golden ratio constant)
+
+    public function __construct(private readonly int $salt) {}
+
+    public function generate(): string
     {
-        do {
-            $code = Str::lower(Str::random($length));
-        } while (ShortUrl::where('short_code', $code)->exists());
+        $counter = Redis::incr('shortcode:counter');
+        $scrambled = ($counter * self::MULTIPLIER + $this->salt) % self::RANGE;
+        $value = $scrambled + self::MIN;
+
+        return $this->encode($value);
+    }
+
+    private function encode(int $value): string
+    {
+        $code = '';
+        while ($value > 0) {
+            $code = self::CHARSET[$value % self::BASE] . $code;
+            $value = intdiv($value, self::BASE);
+        }
 
         return $code;
     }
 }
 ```
+
+**Penjelasan tiap bagian:**
+
+- `Redis::incr('shortcode:counter')` — atomic increment, aman dari race condition di multi-server
+- `($counter * MULTIPLIER + $salt) % RANGE` — scramble supaya counter tidak sequential
+- `+ MIN` — pastikan value selalu di range 6-digit Base62
+- `encode()` — konversi integer ke Base62 dengan cara modulo berulang (seperti konversi desimal ke biner)
+
+> **Batas kapasitas:** RANGE ≈ 55.8 miliar. Artinya aplikasi bisa membuat ~55 miliar short link 6-digit sebelum kehabisan kombinasi — lebih dari cukup.
 
 ---
 
@@ -324,14 +432,13 @@ class RedirectController extends Controller
     {
         $shortUrl = ShortUrl::active()->where('short_code', $code)->firstOrFail();
 
-        // Catat kunjungan
         $shortUrl->visits()->create([
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'referer'    => $request->headers->get('referer'),
         ]);
 
-        // Tambah counter (atomic untuk menghindari race condition)
+        // increment() atomic — aman dari race condition
         $shortUrl->increment('clicks_count');
 
         return redirect()->away($shortUrl->original_url, 301);
@@ -349,7 +456,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreShortUrlRequest;
 use App\Http\Requests\UpdateShortUrlRequest;
 use App\Models\ShortUrl;
-use App\Support\ShortCodeGenerator;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -375,14 +481,14 @@ class ShortUrlController extends Controller
         $shortUrl = ShortUrl::create([
             'user_id'        => auth()->id(),
             'original_url'   => $request->original_url,
-            'short_code'     => $request->short_code ?? ShortCodeGenerator::generate(),
+            'short_code'     => $request->short_code, // null → model event generate dari ID; custom → pakai input
             'is_custom_code' => $request->filled('short_code'),
             // Guest: otomatis expire 30 hari. Auth: pakai input user (boleh null)
             'expires_at'     => $isGuest ? now()->addDays(30) : $request->expires_at,
         ]);
 
         return $isGuest
-            ? back()->with('flash', ['shortUrl' => $shortUrl->short_url])
+            ? back()->with('flash', ['shortUrl' => $shortUrl->refresh()->short_url])
             : redirect()->route('short-urls.index')->with('success', 'Link berhasil dibuat!');
     }
 
@@ -405,6 +511,8 @@ class ShortUrlController extends Controller
     }
 }
 ```
+
+> **Perhatikan** `$shortUrl->refresh()->short_url` di method `store` — setelah `create()`, model event sudah mengisi `short_code` di database, tapi objek `$shortUrl` di memori belum terupdate. `refresh()` memuat ulang data dari DB.
 
 ---
 
@@ -588,6 +696,17 @@ it('user login dapat membuat short link dengan custom code', function () {
     expect(ShortUrl::where('short_code', 'mycustom')->exists())->toBeTrue();
 });
 
+it('short link auto-generated memiliki kode 6 karakter base62', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->post(route('short-urls.store'), [
+        'original_url' => 'https://example.com',
+    ]);
+
+    $link = ShortUrl::first();
+    expect($link->short_code)->toMatch('/^[0-9a-zA-Z]{6}$/');
+});
+
 it('redirect ke URL asli dan catat kunjungan', function () {
     $link = ShortUrl::factory()->create([
         'original_url' => 'https://example.com',
@@ -627,7 +746,7 @@ it('user tidak bisa hapus link milik orang lain', function () {
 
 ---
 
-### Langkah 5.2 — Setup Factory (opsional tapi dianjurkan)
+### Langkah 5.2 — Setup Factory
 
 Buka `database/factories/ShortUrlFactory.php` dan isi:
 
@@ -637,7 +756,7 @@ public function definition(): array
     return [
         'user_id'        => null,
         'original_url'   => fake()->url(),
-        'short_code'     => fake()->unique()->lexify('??????'),
+        'short_code'     => null, // model event akan generate dari ID secara otomatis
         'is_custom_code' => false,
         'clicks_count'   => 0,
         'is_active'      => true,
@@ -645,6 +764,12 @@ public function definition(): array
     ];
 }
 ```
+
+> **Catatan:** Jika test membutuhkan short_code spesifik (seperti di test redirect di atas), pass langsung saat `create()`:
+> ```php
+> ShortUrl::factory()->create(['short_code' => 'abc123']);
+> ```
+> Karena `short_code` tidak null, model event tidak akan menimpa nilainya.
 
 ---
 
@@ -664,7 +789,7 @@ Semua test harus hijau ✓ sebelum lanjut.
 - [ ] `php artisan route:list` menampilkan semua route shortener
 - [ ] `php artisan test --compact --filter=ShortUrl` semua hijau
 - [ ] Kunjungi `/links` → halaman muncul (butuh login)
-- [ ] Buat short link → muncul di daftar
+- [ ] Buat short link → kode yang muncul tepat 6 karakter (misal: `xK9mZp`)
 - [ ] Copy short link → kunjungi di browser → redirect ke URL asli
 - [ ] Kunjungi short link yang expired → halaman 404
 - [ ] Coba buat 6 link berturut-turut sebagai guest → rate limit error
