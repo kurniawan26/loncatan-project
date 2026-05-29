@@ -1,8 +1,7 @@
 <?php
 
 namespace App\Support;
-use App\Models\ShortUrl;
-use Illuminate\Support\Str;
+
 use Illuminate\Support\Facades\Redis;
 
 class ShortCodeGenerator
@@ -13,7 +12,7 @@ class ShortCodeGenerator
     private const RANGE = 62 ** 6 - self::MIN; // 62^6 - 62^5 = 56,800,235,584
     private const MULTIPLIER = 2654435761; // A large prime number for hashing
 
-    public function __construct(private readonly int $salt){}
+    public function __construct(private readonly int $salt) {}
 
     public function generate(): string
     {
@@ -28,11 +27,10 @@ class ShortCodeGenerator
     {
         $shortCode = "";
         while ($value > 0) {
-            $code = self::CHARSET[$value % self::BASE] . $shortCode;
+            $shortCode = self::CHARSET[$value % self::BASE] . $shortCode;
             $value = intdiv($value, self::BASE);
         }
 
         return $shortCode;
-        
     }
 }
