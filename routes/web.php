@@ -9,20 +9,12 @@ Route::inertia('/', 'welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
-});
-
-require __DIR__ . '/settings.php';
-
 Route::post('/links', [ShortUrlController::class, 'store'])
     ->middleware('throttle:create-link')
     ->name('short-urls.store');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/links', [ShortUrlController::class, 'index'])->name('short-urls.index');
-    Route::put('/links/{shortUrl}', [ShortUrlController::class, 'update'])->name('short-urls.update');
-    Route::delete('/links/{shortUrl}', [ShortUrlController::class, 'destroy'])->name('short-urls.destroy');
-});
+require __DIR__ . '/settings.php';
+require __DIR__ . '/dashboard.php';
 
+// Catch-all — must be last to avoid swallowing named routes
 Route::get('/{shortCode}', RedirectController::class)->name('redirect');
