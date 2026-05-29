@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('short_urls', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->text('original_url');
             $table->string('short_code', 16)->unique();
+            $table->boolean('is_custom_code')->default(false);
             $table->unsignedBigInteger('clicks_count')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamp('expires_at')->nullable();

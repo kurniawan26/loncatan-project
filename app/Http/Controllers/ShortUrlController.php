@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreShortUrlRequest;
 use App\Http\Requests\UpdateShortUrlRequest;
 use App\Models\ShortUrl;
+use App\Support\ShortCodeGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -22,15 +23,16 @@ class ShortUrlController extends Controller
         ]);
     }
 
-    public function store(StoreShortUrlRequest $request): RedirectResponse
+    public function store(StoreShortUrlRequest $request, ShortCodeGenerator $generator): RedirectResponse
     {
         $isGuest = $request->user() === null;
+        $isCustomCode = $request->filled('short_code');
 
         $shortUrl = ShortUrl::create([
             'user_id' => $request->user()?->id,
             'original_url' => $request->original_url,
-            'short_code' => $request->short_code,
-            'is_custom_code' => $request->filled('short_code'),
+            'short_code' => $isCustomCode ? $request->short_code : $generator->generate(),
+            'is_custom_code' => $isCustomCode,
             'expires_at' => $isGuest ? now()->addDays(30) : $request->expires_at,
         ]);
 
