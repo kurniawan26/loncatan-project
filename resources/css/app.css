@@ -59,6 +59,13 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Public / landing page design tokens */
+    --color-brand: var(--brand);
+    --color-brand-hover: var(--brand-hover);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-public-dark: var(--public-dark);
+    --color-public-dark-foreground: var(--public-dark-foreground);
 }
 
 :root {
@@ -87,6 +94,13 @@
     --chart-4: oklch(0.828 0.189 84.429);
     --chart-5: oklch(0.769 0.188 70.08);
     --radius: 0.625rem;
+
+    /* Public / landing page */
+    --brand: oklch(0.73 0.10 194);
+    --brand-hover: oklch(0.65 0.10 194);
+    --brand-foreground: oklch(1 0 0);
+    --public-dark: oklch(0.25 0.04 265);
+    --public-dark-foreground: oklch(0.98 0 0);
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
