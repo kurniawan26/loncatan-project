@@ -22,7 +22,7 @@ class RedirectController extends Controller
             'referer' => $request->headers->get('referer'),
         ]);
 
-        $shortUrl->increment('visit_count');
+        $shortUrl->increment('clicks_count');
 
         return redirect()->away($shortUrl->original_url);
     }
