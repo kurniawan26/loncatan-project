@@ -24,7 +24,7 @@ class StoreShortUrlRequest extends FormRequest
     {
         return [
             'original_url' => ['required', 'url', 'max:2048'],
-            'short_code' => ['nullable', 'string', 'alpha_dash', 'min:3', 'max:16', 'unique:short_urls, short_code'],
+            'short_code' => ['nullable', 'string', 'alpha_dash', 'min:3', 'max:16', 'unique:short_urls,short_code'],
             'expires_at' => ['nullable', 'date', 'after:now']
             //
         ];
