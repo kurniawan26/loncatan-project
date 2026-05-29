@@ -18,7 +18,13 @@ class ShortUrlFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'user_id' => \App\Models\User::factory(),
+            'original_url' => fake()->url(),
+            'short_code' => fake()->unique()->lexify('??????'),
+            'is_custom_code' => false,
+            'clicks_count' => 0,
+            'is_active' => true,
+            'expires_at' => null,
         ];
     }
 }
