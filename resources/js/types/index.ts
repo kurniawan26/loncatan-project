@@ -14,6 +14,16 @@ export type ShortUrl = {
     expires_at: string | null;
     created_at: string;
     updated_at: string;
+    daily?: number[];         // 30-day click counts, injected by controller
+    clicks7?: number;         // clicks in last 7 days, injected by controller
+};
+
+export type DashboardStats = {
+    totalClicks: number;
+    activeCount: number;
+    totalCount: number;
+    clicks7Total: number;
+    trend30: number[];
 };
 export type Paginator<T> = {
     data: T[];

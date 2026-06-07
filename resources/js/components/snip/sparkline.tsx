@@ -4,7 +4,7 @@ interface SparklineProps {
     color?: string;
 }
 
-export function Sparkline({ data, height = 28, color = 'var(--accent)' }: SparklineProps) {
+export function Sparkline({ data, height = 28, color = 'var(--ink)' }: SparklineProps) {
     if (!data.length) return null;
 
     const max = Math.max(...data, 1);
