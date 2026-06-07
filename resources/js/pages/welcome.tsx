@@ -1,48 +1,40 @@
-import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { SnipLogo } from '@/components/snip-logo';
-import { useClipboard } from '@/hooks/use-clipboard';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Button } from '@/components/snip/button';
 import { Icon } from '@/components/snip/icon';
 import { IconButton } from '@/components/snip/icon-button';
 import { QR } from '@/components/snip/qr';
 import { Sparkline } from '@/components/snip/sparkline';
+import { SnipLogo } from '@/components/snip-logo';
+import { useClipboard } from '@/hooks/use-clipboard';
 import { fmt, SNIP_LINKS } from '@/lib/snip-data';
-
-interface ShortenResult {
-    slug: string;
-    dest: string;
-}
-
-function slugify(url: string): string {
-    try {
-        const hostname = new URL(url.match(/^https?:\/\//) ? url : 'https://' + url).hostname
-            .replace(/^www\./, '')
-            .split('.')[0];
-        return hostname.slice(0, 6) + '-' + Math.random().toString(36).slice(2, 6);
-    } catch {
-        return 'x-' + Math.random().toString(36).slice(2, 6);
-    }
-}
+import shortUrls from '@/routes/short-urls';
 
 const features = [
-    { icon: 'edit' as const, t: 'Custom slug', d: 'Ganti kode acak jadi kata yang kamu mau — snip.to/spring-drop.' },
+    { icon: 'edit' as const, t: 'Custom slug', d: 'Ganti kode acak jadi kata yang kamu mau — loncatan.com/spring-drop.' },
     { icon: 'qr' as const, t: 'QR code instan', d: 'Setiap link punya QR siap-cetak untuk kemasan, poster, atau layar.' },
     { icon: 'chart' as const, t: 'Analitik klik', d: 'Lihat klik per hari, negara, perangkat, dan sumber trafik.' },
     { icon: 'clock' as const, t: 'Tanggal kedaluwarsa', d: 'Set link mati otomatis setelah kampanye selesai.' },
 ];
 
 export default function Welcome() {
-    const [url, setUrl] = useState('');
-    const [result, setResult] = useState<ShortenResult | null>(null);
+    const { props } = usePage();
     const [, copy] = useClipboard();
+    const { data, setData, post, processing, errors } = useForm({ original_url: '' });
 
     const goToDashboard = () => router.visit('/login');
 
     const shorten = () => {
-        if (!url.trim()) return;
-        setResult({ slug: slugify(url), dest: url });
+        if (!data.original_url.trim()) {
+            return;
+        }
+
+        post(shortUrls.store.url(), { preserveScroll: true, preserveState: true });
     };
+
+    const shortUrl = props.flash.shortUrl;
+    const result = shortUrl
+        ? { slug: shortUrl.split('/').pop() ?? '', dest: data.original_url }
+        : null;
 
     return (
         <>
@@ -87,12 +79,18 @@ export default function Welcome() {
                                 <Icon name="link" className="lead" />
                                 <input
                                     placeholder="Tempel tautan panjang di sini…"
-                                    value={url}
-                                    onChange={(e) => setUrl(e.target.value)}
+                                    value={data.original_url}
+                                    onChange={(e) => setData('original_url', e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && shorten()}
+                                    disabled={processing}
                                 />
-                                <Button variant="primary" icon="scissors" onClick={shorten}>
-                                    Pendekkan
+                                {errors.original_url && (
+                                    <span style={{ color: 'var(--color-red-500)', fontSize: 12 }}>
+                                        {errors.original_url}
+                                    </span>
+                                )}
+                                <Button variant="primary" icon="scissors" onClick={shorten} disabled={processing}>
+                                    {processing ? 'Memproses…' : 'Pendekkan'}
                                 </Button>
                             </div>
                             <p className="hint" style={{ textAlign: 'center', marginTop: 10 }}>
@@ -105,7 +103,7 @@ export default function Welcome() {
                                 <div className="lp-result-main">
                                     <div className="eyebrow">Link pendekmu siap</div>
                                     <div className="chip-link" style={{ fontSize: 18, marginTop: 8 }}>
-                                        <span className="dom">snip.to/</span>
+                                        <span className="dom">loncatan.com/</span>
                                         <b style={{ fontWeight: 600 }}>{result.slug}</b>
                                     </div>
                                     <div className="link-dest" style={{ marginTop: 8, maxWidth: 360 }}>
@@ -119,7 +117,7 @@ export default function Welcome() {
                                         size="md"
                                         variant="ghost"
                                         title="Salin"
-                                        onClick={() => copy('snip.to/' + result.slug)}
+                                        onClick={() => copy('loncatan.com/' + result.slug)}
                                     />
                                     <QR seed={result.slug.length * 7} size={64} cells={17} />
                                     <Button variant="ghost" size="sm" iconRight="chevRight" onClick={goToDashboard}>
@@ -137,7 +135,7 @@ export default function Welcome() {
                                 <span className="peek-dot" />
                                 <span className="peek-dot" />
                                 <span className="peek-dot" />
-                                <div className="peek-url mono">app.snip.to/dashboard</div>
+                                <div className="peek-url mono">app.loncatan.com/dashboard</div>
                             </div>
                             <div className="peek-body">
                                 {SNIP_LINKS.slice(0, 4).map((l) => (
@@ -147,7 +145,7 @@ export default function Welcome() {
                                         </span>
                                         <div className="flex-1" style={{ minWidth: 0 }}>
                                             <div className="mono" style={{ fontSize: 13 }}>
-                                                <span className="dim">snip.to/</span>
+                                                <span className="dim">loncatan.com/</span>
                                                 {l.slug}
                                             </div>
                                             <div
