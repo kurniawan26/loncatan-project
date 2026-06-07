@@ -3,7 +3,7 @@ export function SnipLogo({ size = 'md' }: { size?: 'md' | 'lg' }) {
         <span className="brand">
             <span className={`brand-mark${size === 'lg' ? ' lg' : ''}`} />
             <span className="brand-name">
-                Snip<span className="dot">.</span>
+                Loncatan<span className="dot">.</span>
             </span>
         </span>
     );

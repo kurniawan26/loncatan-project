@@ -38,7 +38,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="Snip — Pendek, rapi, terlacak." />
+            <Head title="Loncatan — Pendek, rapi, terlacak." />
             <div className="landing">
 
                 {/* NAV */}
@@ -215,27 +215,17 @@ export default function Welcome() {
 
                 {/* CTA */}
                 <section className="lp-cta" id="harga">
-                    <h2 className="lp-h2" style={{ color: '#fff' }}>
+                    <h2 className="lp-h2">
                         Mulai pendekkan hari ini.
                     </h2>
-                    <p style={{ color: 'rgba(255,255,255,.6)', maxWidth: 420, margin: '12px auto 0', fontSize: 15 }}>
+                    <p style={{ opacity: 0.6, maxWidth: 420, margin: '12px auto 0', fontSize: 15 }}>
                         Gratis selamanya untuk 50 link. Upgrade kapan saja untuk domain & analitik penuh.
                     </p>
                     <div className="row gap-10" style={{ justifyContent: 'center', marginTop: 26 }}>
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            onClick={goToDashboard}
-                            style={{ background: '#fff', color: '#111' }}
-                        >
+                        <Button variant="primary" size="lg" onClick={goToDashboard}>
                             Buat akun gratis
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="lg"
-                            onClick={goToDashboard}
-                            style={{ color: '#fff', borderColor: 'rgba(255,255,255,.25)' }}
-                        >
+                        <Button variant="ghost" size="lg" onClick={goToDashboard}>
                             Lihat demo
                         </Button>
                     </div>
@@ -244,7 +234,7 @@ export default function Welcome() {
                 <footer className="lp-foot">
                     <SnipLogo size="md" />
                     <span className="dim" style={{ fontSize: 12.5 }}>
-                        © 2026 Snip — prototipe desain
+                        © 2026 Loncatan — prototipe desain
                     </span>
                 </footer>
             </div>

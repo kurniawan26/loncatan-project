@@ -81,7 +81,7 @@ export default function SnipLayout({ children }: { children: ReactNode }) {
                 {/* desktop topbar */}
                 <div className="snip-topbar">
                     <div className="crumb">
-                        <Link href={shortUrls.index.url()}>Snip</Link>
+                        <Link href={shortUrls.index.url()}>Loncatan</Link>
                         <ChevronRight size={14} />
                         <span className="here">{currentCrumb}</span>
                     </div>
