@@ -21,6 +21,7 @@ Route::post('/links', [ShortUrlController::class, 'store'])
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/links', [ShortUrlController::class, 'index'])->name('short-urls.index');
+    Route::get('/links/create', [ShortUrlController::class, 'create'])->name('short-urls.create');
     Route::put('/links/{shortUrl}', [ShortUrlController::class, 'update'])->name('short-urls.update');
     Route::delete('/links/{shortUrl}', [ShortUrlController::class, 'destroy'])->name('short-urls.destroy');
 });
