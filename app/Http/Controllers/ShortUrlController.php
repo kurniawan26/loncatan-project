@@ -20,6 +20,7 @@ class ShortUrlController extends Controller
 
         return Inertia::render('links/index', [
             'links' => $links,
+            'linkCount' => $links->total(),
         ]);
     }
 
@@ -57,5 +58,10 @@ class ShortUrlController extends Controller
         $shortUrl->delete();
 
         return redirect()->route('short-urls.index')->with('success', 'Link berhasil dihapus!');
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('links/create');
     }
 }
