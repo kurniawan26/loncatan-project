@@ -22,3 +22,8 @@ export function fmt(n: number): string {
     if (n >= 1_000) return (n / 1_000).toFixed(1).replace('.', ',') + 'K';
     return String(n);
 }
+
+export function dateID(s: string | null | undefined): string {
+    if (!s) return '—';
+    return new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
