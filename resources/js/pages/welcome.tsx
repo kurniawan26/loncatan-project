@@ -135,7 +135,7 @@ export default function Welcome() {
                                 <span className="peek-dot" />
                                 <span className="peek-dot" />
                                 <span className="peek-dot" />
-                                <div className="peek-url mono">app.loncatan.com/dashboard</div>
+                                <div className="peek-url mono">loncatan.com/dashboard</div>
                             </div>
                             <div className="peek-body">
                                 {SNIP_LINKS.slice(0, 4).map((l) => (
