@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\SocialController;
 use App\Http\Controllers\RedirectController;
 use App\Http\Controllers\ShortUrlController;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,11 @@ Route::inertia('/', 'welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
+});
+
+Route::middleware('guest')->group(function () {
+    Route::get('/auth/google', [SocialController::class, 'redirect'])->name('auth.google');
+    Route::get('/auth/google/callback', [SocialController::class, 'callback'])->name('auth.google.callback');
 });
 
 require __DIR__.'/settings.php';
