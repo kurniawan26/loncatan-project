@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { type FormEvent, useMemo, useState } from 'react';
 import { Button } from '@/components/snip/button';
 import { Icon } from '@/components/snip/icon';
 import { QR } from '@/components/snip/qr';
@@ -43,7 +43,7 @@ export default function LinksCreate() {
 
     const canSave = data.original_url.trim().length > 3;
 
-    function submit(e: React.FormEvent) {
+    function submit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         post(shortUrls.store.url());
     }

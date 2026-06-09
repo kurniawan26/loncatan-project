@@ -234,7 +234,7 @@ export default function Welcome() {
                 <footer className="lp-foot">
                     <SnipLogo size="md" />
                     <span className="dim" style={{ fontSize: 12.5 }}>
-                        © 2026 Loncatan — prototipe desain
+                        © 2026 Loncatan
                     </span>
                 </footer>
             </div>
