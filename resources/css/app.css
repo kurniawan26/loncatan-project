@@ -820,3 +820,113 @@
 @media (max-width: 480px) {
     .lp-feature-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------------- ERROR PAGE ---------------- */
+.err-wrap { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
+.err-nav {
+    max-width: 900px; margin: 0 auto; padding: 24px 28px; width: 100%;
+    display: flex; align-items: center;
+}
+.err-nav .spacer { flex: 1; }
+.theme-btn {
+    width: 34px; height: 34px; border-radius: var(--r-sm);
+    border: 1px solid var(--line-2); background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background .15s var(--ease), box-shadow .15s var(--ease);
+    color: var(--ink-2);
+}
+.theme-btn:hover { background: var(--surface-2); box-shadow: var(--sh-1); }
+.err-main {
+    flex: 1; max-width: 900px; margin: 0 auto; padding: 36px 28px 60px; width: 100%;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+.err-scene-box { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 44px; }
+.scene {
+    position: relative; height: 120px; width: 320px;
+    display: flex; align-items: center; justify-content: center;
+}
+.snipcard {
+    width: 240px; height: 56px; border-radius: var(--r-lg);
+    background: var(--surface); border: 1.5px solid var(--line-2);
+    box-shadow: var(--sh-2);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; position: relative; z-index: 2;
+}
+.codechip {
+    font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+    background: var(--surface-2); border: 1px solid var(--line);
+    padding: 3px 8px; border-radius: 6px; color: var(--ink-3);
+    flex: 0 0 auto;
+}
+.chip-bar { height: 10px; flex: 1; background: var(--line-2); border-radius: 99px; }
+.cut {
+    position: absolute; left: 50%; top: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    width: 100%; height: 2px; z-index: 3;
+    background: repeating-linear-gradient(90deg, var(--line-3) 0px, var(--line-3) 6px, transparent 6px, transparent 12px);
+}
+.scissors-anim {
+    position: absolute; left: -18px; top: 50%; transform: translateY(-50%) rotate(90deg);
+    z-index: 4; color: var(--ink-2);
+    animation: snip 3.2s var(--ease) infinite;
+}
+.big404 {
+    font-family: var(--font-display); font-size: clamp(76px, 14vw, 120px); font-weight: 700;
+    letter-spacing: -.05em; line-height: 1; color: var(--ink);
+    animation: rise 0.7s var(--ease) both;
+}
+.err-title {
+    font-family: var(--font-display); font-size: clamp(18px, 3vw, 24px); font-weight: 600;
+    letter-spacing: -.025em; color: var(--ink); margin-top: 6px;
+    animation: rise 0.7s .08s var(--ease) both;
+}
+.err-lede {
+    font-size: 15px; color: var(--ink-2); line-height: 1.5; max-width: 420px;
+    animation: rise 0.7s .16s var(--ease) both;
+}
+.err-finder {
+    width: 100%; max-width: 460px; margin-top: 28px;
+    animation: rise 0.7s .22s var(--ease) both;
+}
+.err-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1.5px solid var(--line-2);
+    border-radius: var(--r-md); padding: 0 14px; box-shadow: var(--sh-1);
+    height: 46px;
+}
+.err-bar input {
+    flex: 1; min-width: 0; border: none; background: none; outline: none;
+    font-size: 14px; color: var(--ink); font-family: inherit;
+}
+.err-bar input::placeholder { color: var(--ink-4); }
+.err-actions {
+    display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; justify-content: center;
+    animation: rise 0.7s .26s var(--ease) both;
+}
+.helpers {
+    margin-top: 40px; display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;
+    animation: rise 0.7s .32s var(--ease) both;
+}
+.helpers a {
+    font-size: 13px; color: var(--ink-3); transition: color .15s;
+    display: flex; align-items: center; gap: 5px;
+}
+.helpers a:hover { color: var(--ink-2); }
+.err-foot {
+    max-width: 900px; margin: 0 auto; padding: 28px 28px 48px; width: 100%;
+    border-top: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    font-size: 13px; color: var(--ink-3);
+}
+.err-foot a { color: var(--ink-3); transition: color .15s; }
+.err-foot a:hover { color: var(--ink-2); }
+.err-foot .foot-links { display: flex; gap: 20px; }
+@keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes snip {
+    0%   { left: -18px; }
+    60%  { left: calc(100% + 18px); }
+    100% { left: calc(100% + 18px); }
+}

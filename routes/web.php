@@ -13,7 +13,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
 
 Route::post('/links', [ShortUrlController::class, 'store'])
     ->middleware('throttle:create-link')
@@ -26,4 +26,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/links/{shortUrl}', [ShortUrlController::class, 'destroy'])->name('short-urls.destroy');
 });
 
-Route::get('/{shortCode}', RedirectController::class)->name('redirect');
+Route::get('/{shortCode}', RedirectController::class)
+    ->middleware('throttle:redirect')
+    ->name('redirect');
