@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { type FormEvent, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import type { SyntheticEvent } from 'react';
 import { Button } from '@/components/snip/button';
 import { Icon } from '@/components/snip/icon';
 import { QR } from '@/components/snip/qr';
@@ -42,10 +43,27 @@ export default function LinksCreate() {
     }, [data.original_url, data.short_code]);
 
     const canSave = data.original_url.trim().length > 3;
+    const qrRef = useRef<HTMLDivElement>(null);
 
-    function submit(e: FormEvent<HTMLFormElement>) {
+    function submit(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
         post(shortUrls.store.url());
+    }
+
+    function downloadQR() {
+        const svg = qrRef.current?.querySelector('svg');
+
+        if (!svg) {
+            return;
+        }
+
+        const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = `qr-${autoSlug}.svg`;
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
     function handleExpiryToggle(value: boolean) {
@@ -212,12 +230,8 @@ export default function LinksCreate() {
                                 {data.original_url || 'tujuan-belum-diisi.com'}
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-                                <QR
-                                    seed={(autoSlug || 'x').length * 11 + autoSlug.charCodeAt(0)}
-                                    size={172}
-                                    cells={21}
-                                />
+                            <div ref={qrRef} style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
+                                <QR value={`${window.location.origin}/${autoSlug}`} size={172} />
                             </div>
 
                             <div className="row gap-8">
@@ -227,7 +241,7 @@ export default function LinksCreate() {
                                     icon="copy"
                                     type="button"
                                     style={{ flex: 1 }}
-                                    onClick={() => copy('loncatan.com/' + autoSlug)}
+                                    onClick={() => copy(`${window.location.origin}/${autoSlug}`)}
                                 >
                                     Salin link
                                 </Button>
@@ -237,6 +251,7 @@ export default function LinksCreate() {
                                     icon="download"
                                     type="button"
                                     style={{ flex: 1 }}
+                                    onClick={downloadQR}
                                 >
                                     Unduh QR
                                 </Button>

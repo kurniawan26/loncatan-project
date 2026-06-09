@@ -119,7 +119,7 @@ export default function Welcome() {
                                         title="Salin"
                                         onClick={() => copy('loncatan.com/' + result.slug)}
                                     />
-                                    <QR seed={result.slug.length * 7} size={64} cells={17} />
+                                    <QR value={shortUrl ?? ''} size={64} />
                                     <Button variant="ghost" size="sm" iconRight="chevRight" onClick={goToDashboard}>
                                         Dashboard
                                     </Button>
