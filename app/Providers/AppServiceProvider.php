@@ -25,6 +25,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureRateLimiters();
+
+        $this->app->booted(function () {
+            foreach (app('router')->getRoutes() as $route) {
+                if ($route->uri() === 'register' && in_array('POST', $route->methods())) {
+                    $route->middleware(['throttle:register']);
+                }
+            }
+        });
     }
 
     protected function configureDefaults(): void
@@ -53,6 +61,14 @@ class AppServiceProvider extends ServiceProvider
             return $request->user()
                 ? Limit::perHour(50)->by($request->user()->id)
                 : Limit::perHour(5)->by($request->ip());
+        });
+
+        RateLimiter::for('redirect', function (Request $request) {
+            return Limit::perMinute(60)->by($request->ip());
+        });
+
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perHour(5)->by($request->ip());
         });
     }
 }
