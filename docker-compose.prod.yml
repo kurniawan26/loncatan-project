@@ -1,7 +1,7 @@
 services:
   app:
     image: kurniawan026/loncatan-project:latest
-    env_file: .env.prod
+    env_file: .env
     volumes:
       - app_storage:/var/www/html/storage
       - app_bootstrap_cache:/var/www/html/bootstrap/cache
@@ -30,7 +30,7 @@ services:
   queue:
     image: kurniawan026/loncatan-project:latest
     command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
-    env_file: .env.prod
+    env_file: .env
     volumes:
       - app_storage:/var/www/html/storage
     depends_on:
