@@ -37,10 +37,27 @@ RUN { \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+WORKDIR /var/www/html
+
+# Cache composer layer — only re-runs when composer.json/lock changes
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
+
+# Cache npm layer — only re-runs when package files change
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy application code
+COPY . .
+
+# Post-install scripts, build frontend assets, fix permissions
+RUN composer dump-autoload --optimize --no-dev \
+    && npm run build \
+    && mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
 COPY docker/php/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-WORKDIR /var/www/html
 
 EXPOSE 9000
 
