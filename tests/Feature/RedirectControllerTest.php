@@ -61,7 +61,7 @@ test('redirect serves cached short url on subsequent hits', function () {
 
 test('cache is cleared when link is updated', function () {
     $link = ShortUrl::factory()->create(['short_code' => 'abc123', 'user_id' => null]);
-    Cache::put('short:abc123', $link, 3600);
+    Cache::put('short:abc123', ['id' => $link->id, 'original_url' => $link->original_url], 3600);
 
     $link->update(['is_active' => false]);
 
@@ -70,7 +70,7 @@ test('cache is cleared when link is updated', function () {
 
 test('cache is cleared when link is deleted', function () {
     $link = ShortUrl::factory()->create(['short_code' => 'abc123', 'user_id' => null]);
-    Cache::put('short:abc123', $link, 3600);
+    Cache::put('short:abc123', ['id' => $link->id, 'original_url' => $link->original_url], 3600);
 
     $link->delete();
 

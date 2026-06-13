@@ -15,10 +15,10 @@ class RedirectController extends Controller
     {
         $cacheKey = "short:{$shortCode}";
 
-        /** @var ShortUrl|null $shortUrl */
-        $shortUrl = Cache::get($cacheKey);
+        /** @var array{id: int, original_url: string}|null $cached */
+        $cached = Cache::get($cacheKey);
 
-        if ($shortUrl === null) {
+        if (! is_array($cached)) {
             $shortUrl = ShortUrl::active()->where('short_code', $shortCode)->first();
 
             if ($shortUrl) {
@@ -26,23 +26,28 @@ class RedirectController extends Controller
                     ? min(3600, max(60, (int) now()->diffInSeconds($shortUrl->expires_at)))
                     : 3600;
 
-                Cache::put($cacheKey, $shortUrl, $ttl);
+                $cached = [
+                    'id' => $shortUrl->id,
+                    'original_url' => $shortUrl->original_url,
+                ];
+
+                Cache::put($cacheKey, $cached, $ttl);
             }
         }
 
-        if (! $shortUrl) {
+        if (! $cached) {
             abort(404);
         }
 
         RecordVisitJob::dispatch(
-            $shortUrl->id,
+            $cached['id'],
             $request->ip(),
             $request->userAgent(),
             $request->headers->get('referer'),
         );
 
-        Redis::hincrby('clicks', (string) $shortUrl->id, 1);
+        Redis::hincrby('clicks', (string) $cached['id'], 1);
 
-        return redirect()->away($shortUrl->original_url);
+        return redirect()->away($cached['original_url']);
     }
 }
