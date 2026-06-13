@@ -7,5 +7,6 @@ if [ ! -f "vendor/autoload.php" ]; then
 fi
 
 php artisan storage:link --no-interaction 2>/dev/null || true
+php artisan migrate --force --no-interaction
 
 exec "$@"

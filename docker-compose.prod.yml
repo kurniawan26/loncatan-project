@@ -9,6 +9,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: always
     networks:
       - loncatan
@@ -36,6 +38,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    networks:
+      - loncatan
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: always
     networks:
       - loncatan
@@ -63,6 +81,7 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:
   app_storage:
   app_bootstrap_cache:
   app_public:
