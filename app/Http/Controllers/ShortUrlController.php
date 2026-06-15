@@ -6,6 +6,7 @@ use App\Http\Requests\StoreShortUrlRequest;
 use App\Http\Requests\UpdateShortUrlRequest;
 use App\Models\ShortUrl;
 use App\Support\ShortCodeGenerator;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -84,13 +85,25 @@ class ShortUrlController extends Controller
         $isGuest = $request->user() === null;
         $isCustomCode = $request->filled('short_code');
 
-        $shortUrl = ShortUrl::create([
-            'user_id' => $request->user()?->id,
-            'original_url' => $request->original_url,
-            'short_code' => $isCustomCode ? $request->short_code : $generator->generate(),
-            'is_custom_code' => $isCustomCode,
-            'expires_at' => $isGuest ? now()->addDays(30) : $request->expires_at,
-        ]);
+        $shortUrl = null;
+        $attempts = $isCustomCode ? 1 : 5;
+
+        for ($i = 0; $i < $attempts; $i++) {
+            try {
+                $shortUrl = ShortUrl::create([
+                    'user_id' => $request->user()?->id,
+                    'original_url' => $request->original_url,
+                    'short_code' => $isCustomCode ? $request->short_code : $generator->generate(),
+                    'is_custom_code' => $isCustomCode,
+                    'expires_at' => $isGuest ? now()->addDays(30) : $request->expires_at,
+                ]);
+                break;
+            } catch (UniqueConstraintViolationException $e) {
+                if ($i === $attempts - 1) {
+                    throw $e;
+                }
+            }
+        }
 
         return $isGuest
             ? back()->with('flash', ['shortUrl' => $shortUrl->refresh()->short_url])

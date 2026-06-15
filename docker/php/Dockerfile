@@ -51,9 +51,9 @@ RUN npm ci
 COPY . .
 
 # Post-install scripts, build frontend assets, fix permissions
-RUN composer dump-autoload --optimize --no-dev \
+RUN mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache \
+    && composer dump-autoload --optimize --no-dev \
     && npm run build \
-    && mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 COPY docker/php/entrypoint.sh /entrypoint.sh

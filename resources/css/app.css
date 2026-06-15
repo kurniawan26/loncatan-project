@@ -196,7 +196,7 @@
         line-height: 1.5;
     }
 
-    #root { height: 100%; }
+    #root, #app { height: 100%; }
 
     button { font-family: inherit; cursor: pointer; }
     input, textarea, select { font-family: inherit; }
@@ -451,7 +451,7 @@
 .snip-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .snip-topbar {
     height: 62px; flex: 0 0 auto; border-bottom: 1px solid var(--line);
-    background: rgba(250,250,250,.85); backdrop-filter: blur(8px);
+    background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(8px);
     display: flex; align-items: center; gap: 14px; padding: 0 26px;
 }
 .snip-topbar .crumb { font-size: 14px; color: var(--ink-3); display: flex; align-items: center; gap: 8px; white-space: nowrap; }

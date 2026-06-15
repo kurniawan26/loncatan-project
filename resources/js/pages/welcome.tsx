@@ -1,4 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/snip/button';
 import { Icon } from '@/components/snip/icon';
 import { IconButton } from '@/components/snip/icon-button';
@@ -16,10 +17,23 @@ const features = [
     { icon: 'clock' as const, t: 'Tanggal kedaluwarsa', d: 'Set link mati otomatis setelah kampanye selesai.' },
 ];
 
+type StoredShortUrl = { shortUrl: string; originalUrl: string };
+
+const STORAGE_KEY = 'loncatan_last_url';
+
 export default function Welcome() {
     const { props } = usePage();
     const [, copy] = useClipboard();
     const { data, setData, post, processing, errors } = useForm({ original_url: '' });
+
+    const [storedResult, setStoredResult] = useState<StoredShortUrl | null>(() => {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? (JSON.parse(raw) as StoredShortUrl) : null;
+        } catch {
+            return null;
+        }
+    });
 
     const goToDashboard = () => router.visit('/login');
 
@@ -31,9 +45,19 @@ export default function Welcome() {
         post(shortUrls.store.url(), { preserveScroll: true, preserveState: true });
     };
 
-    const shortUrl = props.flash.shortUrl;
-    const result = shortUrl
-        ? { slug: shortUrl.split('/').pop() ?? '', dest: data.original_url }
+    useEffect(() => {
+        if (!props.flash.shortUrl) return;
+        const entry: StoredShortUrl = { shortUrl: props.flash.shortUrl, originalUrl: data.original_url };
+        setStoredResult(entry);
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
+        } catch {}
+    }, [props.flash.shortUrl]);
+
+    const activeShortUrl = props.flash.shortUrl ?? storedResult?.shortUrl ?? null;
+    const activeOriginalUrl = props.flash.shortUrl ? data.original_url : (storedResult?.originalUrl ?? '');
+    const result = activeShortUrl
+        ? { slug: activeShortUrl.split('/').pop() ?? '', dest: activeOriginalUrl }
         : null;
 
     return (
@@ -119,7 +143,7 @@ export default function Welcome() {
                                         title="Salin"
                                         onClick={() => copy('loncatan.com/' + result.slug)}
                                     />
-                                    <QR value={shortUrl ?? ''} size={64} />
+                                    <QR value={activeShortUrl ?? ''} size={64} />
                                     <Button variant="ghost" size="sm" iconRight="chevRight" onClick={goToDashboard}>
                                         Dashboard
                                     </Button>
@@ -135,7 +159,7 @@ export default function Welcome() {
                                 <span className="peek-dot" />
                                 <span className="peek-dot" />
                                 <span className="peek-dot" />
-                                <div className="peek-url mono">loncatan.com/dashboard</div>
+                                <div className="peek-url mono">loncatan.com/links</div>
                             </div>
                             <div className="peek-body">
                                 {SNIP_LINKS.slice(0, 4).map((l) => (

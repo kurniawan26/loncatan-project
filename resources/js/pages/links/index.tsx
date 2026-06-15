@@ -1,12 +1,15 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/snip/button';
 import { Icon } from '@/components/snip/icon';
 import { IconButton } from '@/components/snip/icon-button';
+import { QR } from '@/components/snip/qr';
 import { Segment } from '@/components/snip/segment';
 import { Sparkline } from '@/components/snip/sparkline';
 import { StatusBadge } from '@/components/snip/status-badge';
 import type { LinkStatus } from '@/components/snip/status-badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { fmt } from '@/lib/snip-data';
 import * as shortUrls from '@/routes/short-urls';
@@ -39,6 +42,7 @@ export default function LinksIndex({ links, stats }: Props) {
     const [q, setQ] = useState('');
     const [filter, setFilter] = useState('all');
     const [sort, setSort] = useState('recent');
+    const [qrLink, setQrLink] = useState<ShortUrl | null>(null);
 
     const rows = useMemo(
         () =>
@@ -241,13 +245,13 @@ export default function LinksIndex({ links, stats }: Props) {
                                             icon="copy"
                                             size="sm"
                                             title="Salin link"
-                                            onClick={() => copy(`loncatan.com/${link.short_code}`)}
+                                            onClick={() => copy(link.short_url).then((ok) => ok && toast.success('Link disalin!'))}
                                         />
                                         <IconButton
                                             icon="qr"
                                             size="sm"
                                             title="QR code"
-                                            onClick={() => {}}
+                                            onClick={() => setQrLink(link)}
                                         />
                                         <IconButton
                                             icon="edit"
@@ -270,6 +274,19 @@ export default function LinksIndex({ links, stats }: Props) {
                     })}
                 </div>
             )}
+            <Dialog open={qrLink !== null} onOpenChange={(open) => !open && setQrLink(null)}>
+                <DialogContent className="max-w-xs text-center">
+                    <DialogHeader>
+                        <DialogTitle>QR Code</DialogTitle>
+                    </DialogHeader>
+                    {qrLink && (
+                        <div className="flex flex-col items-center gap-4 py-2">
+                            <QR value={qrLink.short_url} size={200} />
+                            <p className="text-sm text-muted-foreground font-mono">{qrLink.short_url}</p>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
