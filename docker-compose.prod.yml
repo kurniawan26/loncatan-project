@@ -1,6 +1,6 @@
 services:
   app:
-    image: kurniawan026/loncatan-project:latest
+    image: kurniawan026/loncatan-project:${IMAGE_TAG:-latest}
     env_file: .env
     volumes:
       - app_storage:/var/www/html/storage
@@ -30,7 +30,7 @@ services:
       - loncatan
 
   queue:
-    image: kurniawan026/loncatan-project:latest
+    image: kurniawan026/loncatan-project:${IMAGE_TAG:-latest}
     command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
     env_file: .env
     volumes:
