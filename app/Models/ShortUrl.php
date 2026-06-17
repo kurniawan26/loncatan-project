@@ -28,6 +28,8 @@ class ShortUrl extends Model
         static::deleted(fn (self $model) => Cache::forget("short:{$model->short_code}"));
     }
 
+    protected $appends = ['short_url'];
+
     protected $fillable = [
         'user_id',
         'original_url',

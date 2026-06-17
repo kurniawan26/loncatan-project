@@ -18,7 +18,7 @@ class ShortUrlController extends Controller
     public function index(): Response
     {
         $userId = Auth::id();
-        $since = now()->subDays(29)->startOfDay();
+        $since = now()->subDays(29)->startOfDay()->toImmutable();
 
         $links = ShortUrl::where('user_id', $userId)->latest()->paginate(20);
         $linkIds = $links->pluck('id');
@@ -39,13 +39,20 @@ class ShortUrlController extends Controller
             ->groupBy('short_url_id')
             ->pluck('count', 'short_url_id');
 
-        $links->getCollection()->transform(function (ShortUrl $link) use ($since, $dailyByLink, $clicks7ByLink) {
+        $totalClicksByLink = DB::table('short_url_visits')
+            ->selectRaw('short_url_id, COUNT(*) as count')
+            ->whereIn('short_url_id', $linkIds)
+            ->groupBy('short_url_id')
+            ->pluck('count', 'short_url_id');
+
+        $links->getCollection()->transform(function (ShortUrl $link) use ($since, $dailyByLink, $clicks7ByLink, $totalClicksByLink) {
             $dayMap = $dailyByLink->get($link->id, collect());
             $link->daily = collect(range(0, 29))
                 ->map(fn (int $i) => (int) ($dayMap->get($since->addDays($i)->toDateString()) ?? 0))
                 ->values()
                 ->all();
             $link->clicks7 = (int) ($clicks7ByLink->get($link->id) ?? 0);
+            $link->clicks_count = (int) ($totalClicksByLink->get($link->id) ?? 0);
 
             return $link;
         });
@@ -63,11 +70,16 @@ class ShortUrlController extends Controller
             ->values()
             ->all();
 
+        $totalClicks = (int) DB::table('short_url_visits')
+            ->join('short_urls', 'short_urls.id', '=', 'short_url_visits.short_url_id')
+            ->where('short_urls.user_id', $userId)
+            ->count();
+
         return Inertia::render('links/index', [
             'links' => $links,
             'linkCount' => $links->total(),
             'stats' => [
-                'totalClicks' => (int) ShortUrl::where('user_id', $userId)->sum('clicks_count'),
+                'totalClicks' => $totalClicks,
                 'activeCount' => ShortUrl::where('user_id', $userId)->active()->count(),
                 'totalCount' => ShortUrl::where('user_id', $userId)->count(),
                 'clicks7Total' => (int) DB::table('short_url_visits')
