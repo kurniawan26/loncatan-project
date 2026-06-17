@@ -8,8 +8,9 @@ if [ ! -f "vendor/autoload.php" ]; then
     composer install --no-interaction --prefer-dist --optimize-autoloader
 fi
 
+rm -f public/hot
+
 if [ "${CONTAINER_ROLE:-app}" = "app" ]; then
-    rm -f public/hot
     if [ -d /var/www/html/.public-original ]; then
         cp -r /var/www/html/.public-original/. /var/www/html/public/
     fi
