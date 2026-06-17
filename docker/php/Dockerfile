@@ -33,7 +33,7 @@ COPY . .
 
 RUN printf 'APP_KEY=base64:%s\nAPP_ENV=local\nCACHE_STORE=array\nSESSION_DRIVER=array\nQUEUE_CONNECTION=sync\nDB_CONNECTION=pgsql\nDB_HOST=127.0.0.1\nDB_PORT=5432\nDB_DATABASE=build\nDB_USERNAME=build\nDB_PASSWORD=build\n' \
         "$(php -r 'echo base64_encode(random_bytes(32));')" > .env \
-    && mkdir -p bootstrap/cache storage/framework/sessions storage/framework/cache/data storage/framework/views \
+    && mkdir -p bootstrap/cache storage/logs storage/framework/sessions storage/framework/cache/data storage/framework/views \
     && composer dump-autoload --optimize --no-dev \
     && php artisan wayfinder:generate --with-form \
     && npm run build \
@@ -81,7 +81,8 @@ COPY --from=builder /var/www/html/public/build ./public/build
 COPY . .
 
 RUN mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache public/build
+    && chown -R www-data:www-data storage bootstrap/cache public/build \
+    && cp -r /var/www/html/public /var/www/html/.public-original
 
 COPY docker/php/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
