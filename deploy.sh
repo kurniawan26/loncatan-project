@@ -18,5 +18,5 @@ docker push "$IMAGE:latest"
 
 echo ""
 echo "Done! Deploy ke server dengan:"
-echo "  IMAGE_TAG=$VERSION docker compose -f docker-compose.prod.yml pull"
-echo "  IMAGE_TAG=$VERSION docker compose -f docker-compose.prod.yml up -d"
+echo "  IMAGE_TAG=$VERSION docker compose -f docker-compose.yml -f docker-compose.prod.yml pull"
+echo "  IMAGE_TAG=$VERSION docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d"
