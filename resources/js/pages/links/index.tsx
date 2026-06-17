@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/snip/button';
 import { Icon } from '@/components/snip/icon';
@@ -44,6 +44,12 @@ export default function LinksIndex({ links, stats }: Props) {
     const [sort, setSort] = useState('recent');
     const [qrLink, setQrLink] = useState<ShortUrl | null>(null);
 
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+    }, [flash?.success]);
+
     const rows = useMemo(
         () =>
             links.data
@@ -87,8 +93,6 @@ export default function LinksIndex({ links, stats }: Props) {
     return (
         <>
             <Head title="Tautan" />
-
-            {flash?.success && <div className="copy-flash show">{flash.success}</div>}
 
             {/* Page header */}
             <div className="page-head stagger">

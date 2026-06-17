@@ -1,8 +1,20 @@
 import type { ReactNode } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { BarChart2, Bell, ChevronDown, ChevronRight, Globe, Link2, Plus, Search, Settings } from 'lucide-react';
+import { BarChart2, Bell, ChevronRight, ChevronsUpDown, Globe, Link2, Plus, Search, Settings } from 'lucide-react';
+import { UserInfo } from '@/components/user-info';
+import { UserMenuContent } from '@/components/user-menu-content';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
+    SidebarProvider,
+} from '@/components/ui/sidebar';
 import { SnipLogo } from '@/components/snip-logo';
-import { useInitials } from '@/hooks/use-initials';
 import { home } from '@/routes';
 import * as shortUrls from '@/routes/short-urls';
 const crumbLabels: Record<string, string> = {
@@ -16,8 +28,6 @@ export default function SnipLayout({ children }: { children: ReactNode }) {
     const page = usePage();
     const user = page.props.auth.user;
     const url = page.url;
-    const getInitials = useInitials();
-    const initials = getInitials(user.name);
 
     const isLinks = url.startsWith('/links');
     const isSettings = url.startsWith('/settings');
@@ -65,14 +75,27 @@ export default function SnipLayout({ children }: { children: ReactNode }) {
                 </div>
 
                 <div className="side-foot">
-                    <div className="user-row">
-                        <span className="snip-avatar">{initials}</span>
-                        <div className="flex-1" style={{ minWidth: 0 }}>
-                            <div className="uname">{user.name}</div>
-                            <div className="uplan">Paket Free</div>
-                        </div>
-                        <ChevronDown size={15} className="dim" />
-                    </div>
+                    <SidebarProvider style={{ display: 'contents' }}>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <SidebarMenuButton
+                                            size="lg"
+                                            className="text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
+                                            data-test="sidebar-menu-button"
+                                        >
+                                            <UserInfo user={user} />
+                                            <ChevronsUpDown className="ml-auto size-4" />
+                                        </SidebarMenuButton>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56" side="top" align="start">
+                                        <UserMenuContent user={user} />
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarProvider>
                 </div>
             </aside>
 
@@ -104,9 +127,19 @@ export default function SnipLayout({ children }: { children: ReactNode }) {
                     <button className="btn btn-icon btn-quiet btn-sm">
                         <Search size={18} />
                     </button>
-                    <span className="snip-avatar" style={{ width: 30, height: 30, fontSize: 12 }}>
-                        {initials}
-                    </span>
+                    {user.avatar ? (
+                        <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="snip-avatar"
+                            style={{ width: 30, height: 30, objectFit: 'cover' }}
+                            referrerPolicy="no-referrer"
+                        />
+                    ) : (
+                        <span className="snip-avatar" style={{ width: 30, height: 30, fontSize: 12 }}>
+                            {user.name[0].toUpperCase()}
+                        </span>
+                    )}
                 </div>
 
                 <div className="snip-content">
